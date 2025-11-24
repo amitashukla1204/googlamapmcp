@@ -10,8 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.22.0",
-    "@modelcontextprotocol/server-google-maps": "^0.6.2",
-    "fetch-to-node": "^2.1.0"
+    "@googlemaps/google-maps-services-js": "^3.4.0"
   }
 }
