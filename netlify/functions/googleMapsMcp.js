@@ -1,34 +1,58 @@
-import { createGoogleMapsServer } from "@modelcontextprotocol/server-google-maps";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { toFetchResponse, toReqRes } from "fetch-to-node";
+const { createGoogleMapsServer } = require("@modelcontextprotocol/server-google-maps");
+const { StreamableHTTPServerTransport } = require("@modelcontextprotocol/sdk/server/streamableHttp.js");
+const { toFetchResponse, toReqRes } = require("fetch-to-node");
 
-export default async (req) => {
-  if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+exports.handler = async (event) => {
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: "Method Not Allowed"
+    };
   }
 
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
-    return new Response("Google Maps API Key not configured", { status: 500 });
+    return {
+      statusCode: 500,
+      body: "Google Maps API Key not configured"
+    };
   }
 
-  const mcpServer = createGoogleMapsServer({ apiKey });
+  try {
+    const mcpServer = createGoogleMapsServer({ apiKey });
+    const transport = new StreamableHTTPServerTransport();
 
-  const { req: nodeReq, res: nodeRes } = toReqRes(req);
-  const transport = new StreamableHTTPServerTransport();
+    await mcpServer.connect(transport);
+    
+    const body = JSON.parse(event.body);
+    
+    // Create a mock request object
+    const mockReq = {
+      method: 'POST',
+      headers: event.headers,
+      body: event.body
+    };
+    
+    const { req: nodeReq, res: nodeRes } = toReqRes(mockReq);
+    await transport.handleRequest(nodeReq, nodeRes, body);
 
-  await mcpServer.connect(transport);
-  const body = await req.json();
-  await transport.handleRequest(nodeReq, nodeRes, body);
-
-  nodeRes.on("close", () => {
-    transport.close();
-    mcpServer.close();
-  });
-
-  return toFetchResponse(nodeRes);
-};
-
-export const config = {
-  path: "/mcp"
+    return new Promise((resolve) => {
+      nodeRes.on("close", () => {
+        transport.close();
+        mcpServer.close();
+        const response = toFetchResponse(nodeRes);
+        resolve({
+          statusCode: response.status,
+          body: response.body,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+      });
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message })
+    };
+  }
 };

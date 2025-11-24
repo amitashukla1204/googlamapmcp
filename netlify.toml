@@ -1,0 +1,14 @@
+[build]
+  command = "npm install"
+  publish = "."
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["@modelcontextprotocol/server-google-maps", "@modelcontextprotocol/sdk"]
+
+[[headers]]
+  for = "/mcp"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"

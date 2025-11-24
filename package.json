@@ -9,7 +9,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@modelcontextprotocol/server-google-maps": "^0.6.2",
